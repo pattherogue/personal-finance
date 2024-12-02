@@ -17,27 +17,43 @@ class AnalyticsService {
         categorySpending[transaction.category].push(transaction.amount);
       });
 
-      // Calculate predictions for each category
+      // Calculate predictions and recommendations for each category
       const predictions = {};
+      const recommendations = [];
+
       for (const [category, amounts] of Object.entries(categorySpending)) {
         // Use simple moving average for prediction
-        const average = amounts.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+        const recentMonths = amounts.slice(0, 3);
+        const average = recentMonths.reduce((a, b) => a + b, 0) / (recentMonths.length || 1);
         predictions[category] = Math.round(average * 100) / 100;
-      }
 
-      // Generate recommendations
-      const recommendations = [];
-      for (const [category, predictedAmount] of Object.entries(predictions)) {
-        const monthlyTotal = amounts => amounts.reduce((a, b) => a + b, 0);
-        const recentMonthSpending = monthlyTotal(categorySpending[category].slice(0, 3));
-        const previousMonthSpending = monthlyTotal(categorySpending[category].slice(3, 6));
+        // Compare with previous period spending
+        const recentTotal = amounts.slice(0, 3).reduce((a, b) => a + b, 0);
+        const previousTotal = amounts.slice(3, 6).reduce((a, b) => a + b, 0);
 
-        if (recentMonthSpending > previousMonthSpending * 1.1) {
-          recommendations.push({
-            category,
-            message: `Spending in ${category} has increased by ${Math.round((recentMonthSpending/previousMonthSpending - 1) * 100)}%. Consider setting a budget of $${predictedAmount}.`,
-            severity: 'warning'
-          });
+        // Only add recommendation if there's meaningful data to compare
+        if (recentTotal > 0) {
+          let percentageChange = 0;
+          
+          if (previousTotal === 0) {
+            // New spending category
+            recommendations.push({
+              category,
+              message: `New spending detected in ${category}. Consider setting a budget of $${predictions[category].toFixed(2)}.`,
+              severity: 'info'
+            });
+          } else {
+            // Calculate percentage change
+            percentageChange = ((recentTotal - previousTotal) / previousTotal) * 100;
+            
+            if (percentageChange > 10) { // Only show warning if increase is more than 10%
+              recommendations.push({
+                category,
+                message: `Spending in ${category} has increased by ${percentageChange.toFixed(1)}%. Consider setting a budget of $${predictions[category].toFixed(2)}.`,
+                severity: 'warning'
+              });
+            }
+          }
         }
       }
 
