@@ -33,6 +33,7 @@ import {
   Brush
 } from 'recharts';
 import axios from 'axios';
+import MonitoringDashboard from './MonitoringDashboard';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 const api = axios.create({
@@ -316,11 +317,14 @@ const Dashboard = () => {
           <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
             <Tab label="Overview" />
             <Tab label="Analytics & Insights" />
+            <Tab label="System Monitor" />
           </Tabs>
         </Grid>
 
         {/* Tab Content */}
-        {activeTab === 0 ? renderOverviewTab() : renderAnalyticsTab()}
+        {activeTab === 0 ? renderOverviewTab() : 
+         activeTab === 1 ? renderAnalyticsTab() :
+         <MonitoringDashboard />}
       </Grid>
     </Box>
   );

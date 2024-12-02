@@ -60,6 +60,7 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/data', require('./routes/data-analysis'));
 app.use('/api/monitor', require('./routes/monitor'));
 app.use('/api/enhanced-analytics', require('./routes/enhanced-analytics')); // Add this line
+app.use('/api/monitor', require('./routes/monitor'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

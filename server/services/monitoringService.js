@@ -1,47 +1,78 @@
+const os = require('os');
 const mongoose = require('mongoose');
 
 class MonitoringService {
-  // Get database stats
-  static async getDatabaseStats() {
-    try {
-      const stats = await mongoose.connection.db.stats();
-      return {
-        collections: stats.collections,
-        objects: stats.objects,
-        avgObjSize: stats.avgObjSize,
-        dataSize: stats.dataSize,
-        storageSize: stats.storageSize,
-        indexes: stats.indexes
-      };
-    } catch (error) {
-      console.error('Error getting database stats:', error);
-      throw error;
-    }
-  }
-
-  // Get system health information
   static async getSystemHealth() {
-    const memoryUsage = process.memoryUsage();
+    const cpuUsage = os.loadavg()[0];
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const uptime = os.uptime();
+
     return {
-      uptime: process.uptime(),
+      cpu: {
+        usage: cpuUsage,
+        cores: os.cpus().length
+      },
       memory: {
-        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
-        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
-        rss: Math.round(memoryUsage.rss / 1024 / 1024)
+        total: totalMemory,
+        free: freeMemory,
+        used: totalMemory - freeMemory,
+        percentUsed: ((totalMemory - freeMemory) / totalMemory * 100).toFixed(2)
+      },
+      uptime: {
+        system: uptime,
+        formatted: this.formatUptime(uptime)
       },
       timestamp: new Date().toISOString()
     };
   }
 
-  // Validate accuracy of predictions vs actual data
-  static validateDataAccuracy(predictions, actuals) {
-    const errors = predictions.map((pred, i) => Math.abs(pred - actuals[i]));
-    return {
-      meanError: errors.reduce((a, b) => a + b, 0) / errors.length,
-      maxError: Math.max(...errors),
-      minError: Math.min(...errors),
-      accuracy: 1 - (errors.reduce((a, b) => a + b, 0) / actuals.reduce((a, b) => a + b, 0))
+  static async getDatabaseMetrics() {
+    try {
+      const dbStats = await mongoose.connection.db.stats();
+      const collections = await mongoose.connection.db.listCollections().toArray();
+      
+      return {
+        collections: collections.length,
+        documents: dbStats.objects,
+        dataSize: dbStats.dataSize,
+        storageSize: dbStats.storageSize,
+        indexes: dbStats.indexes,
+        avgObjSize: dbStats.avgObjSize
+      };
+    } catch (error) {
+      console.error('Error getting database metrics:', error);
+      throw error;
+    }
+  }
+
+  static async getPerformanceMetrics() {
+    const startTime = process.hrtime();
+    const metrics = {
+      apiLatency: {},
+      errorRates: {},
+      activeConnections: 0
     };
+
+    // Sample API latency test
+    try {
+      await mongoose.connection.db.command({ ping: 1 });
+      const [seconds, nanoseconds] = process.hrtime(startTime);
+      metrics.apiLatency.database = seconds * 1000 + nanoseconds / 1000000;
+    } catch (error) {
+      metrics.errorRates.database = true;
+    }
+
+    return metrics;
+  }
+
+  static formatUptime(uptime) {
+    const days = Math.floor(uptime / 86400);
+    const hours = Math.floor((uptime % 86400) / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const seconds = Math.floor(uptime % 60);
+
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
   }
 }
 
