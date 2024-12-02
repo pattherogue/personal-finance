@@ -57,6 +57,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/budgets', require('./routes/budgets')); // Keep your budget route
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/data', require('./routes/data-analysis'));
 app.use('/api/monitor', require('./routes/monitor'));
 
 // Error handling middleware
