@@ -3,19 +3,33 @@ const mongoose = require('mongoose');
 const BudgetSchema = new mongoose.Schema({
   category: {
     type: String,
-    required: [true, 'Category is required'],
+    required: true
   },
   amount: {
     type: Number,
-    required: [true, 'Budget amount is required'],
-    min: [0, 'Budget amount cannot be negative']
+    required: true,
+    min: 0
   },
   period: {
     type: String,
     enum: ['monthly', 'weekly'],
     default: 'monthly'
   },
-  // Track current spending for this budget category
+  savingsGoal: {
+    type: Number,
+    default: 0
+  },
+  debtRepayment: {
+    priority: {
+      type: String,
+      enum: ['high', 'medium', 'low'],
+      default: 'medium'
+    },
+    minimumPayment: {
+      type: Number,
+      default: 0
+    }
+  },
   currentSpent: {
     type: Number,
     default: 0

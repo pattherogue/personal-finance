@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const Budget = require('../models/Budget');
 const Transaction = require('../models/Transaction');
+const BudgetService = require('../services/budgetService');
 
-// Get all budgets with spending data
+// Get all budgets with spending data and analysis
 router.get('/', async (req, res) => {
   try {
     const budgets = await Budget.find();
@@ -10,7 +11,7 @@ router.get('/', async (req, res) => {
     // Calculate current spending for each budget
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    
+
     for (let budget of budgets) {
       const spending = await Transaction.aggregate([
         {
@@ -27,12 +28,18 @@ router.get('/', async (req, res) => {
           }
         }
       ]);
-      
+
       budget.currentSpent = spending[0]?.total || 0;
       await budget.save();
     }
 
-    res.json(budgets);
+    // Analyze spending and savings using BudgetService
+    const analysis = BudgetService.analyzeSpendingAndSavings(budgets);
+
+    res.json({
+      budgets,
+      analysis
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -41,12 +48,7 @@ router.get('/', async (req, res) => {
 // Create new budget
 router.post('/', async (req, res) => {
   try {
-    const budget = new Budget({
-      category: req.body.category,
-      amount: req.body.amount,
-      period: req.body.period || 'monthly'
-    });
-
+    const budget = new Budget(req.body);
     const newBudget = await budget.save();
     res.status(201).json(newBudget);
   } catch (err) {
@@ -62,9 +64,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Budget not found' });
     }
 
-    budget.amount = req.body.amount || budget.amount;
-    budget.period = req.body.period || budget.period;
-    
+    Object.assign(budget, req.body);
     const updatedBudget = await budget.save();
     res.json(updatedBudget);
   } catch (err) {
