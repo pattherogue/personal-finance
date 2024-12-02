@@ -42,6 +42,7 @@ const PORT = process.env.PORT || 5001;
 
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/budgets', require('./routes/budgets')); // Add this line
+app.use('/api/analytics', require('./routes/analytics'));
 
 app.use((err, req, res, next) => {
   console.error('Error details:', {

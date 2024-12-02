@@ -6,10 +6,13 @@ import {
   Typography,
   Card,
   CardContent,
-  Alert
+  Alert,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import axios from 'axios';
+import FinancialInsights from './FinancialInsights'; // Import the FinancialInsights component
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 const api = axios.create({
@@ -24,6 +27,7 @@ const Dashboard = () => {
     balance: 0
   });
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState(0); // State to track active tab
 
   useEffect(() => {
     fetchTransactions();
@@ -164,6 +168,25 @@ const Dashboard = () => {
             )}
           </Paper>
         </Grid>
+
+        {/* Tabs for Overview and Insights */}
+        <Grid item xs={12}>
+          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+            <Tab label="Overview" />
+            <Tab label="Insights & Predictions" />
+          </Tabs>
+        </Grid>
+
+        {/* Conditional rendering of tabs */}
+        {activeTab === 0 ? (
+          <>
+            {/* Your existing Grid items for Overview */}
+          </>
+        ) : (
+          <Grid item xs={12}>
+            <FinancialInsights />
+          </Grid>
+        )}
       </Grid>
     </Box>
   );
